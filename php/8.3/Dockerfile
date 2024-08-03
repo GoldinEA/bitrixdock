@@ -23,7 +23,12 @@ RUN apk update && apk upgrade && \
         php83-xml \
         php83-xmlreader \
         php83-xmlwriter \
-        sudo
+        sudo \
+        imagemagick \
+        imagemagick-dev \
+        zlib-dev \
+        libmemcached-dev \
+        cyrus-sasl-dev
 
 # Установка пакетов для сборки
 RUN apk add --no-cache --virtual .build-deps \
@@ -33,17 +38,16 @@ RUN apk add --no-cache --virtual .build-deps \
         autoconf \
         linux-headers \
         pkgconfig \
-        imagemagick-dev \
-        libmemcached-dev \
         zlib-dev \
+        libmemcached-dev \
         cyrus-sasl-dev
 
 # Установка и запуск Memcached
 RUN apk add --no-cache memcached
 
-# Установка расширений Imagick, Xdebug и Memcached
-RUN pecl install imagick xdebug memcached && \
-    docker-php-ext-enable imagick xdebug memcached
+# Установка расширений Imagick, Xdebug, Memcache и Memcached
+RUN pecl install imagick xdebug memcache memcached && \
+    docker-php-ext-enable imagick xdebug memcache memcached
 
 # Удаление пакетов для сборки
 RUN apk del .build-deps && \
@@ -51,6 +55,7 @@ RUN apk del .build-deps && \
 
 # Копирование настроек PHP
 COPY ./php.ini /etc/php83/conf.d/php.ini
+RUN docker-php-ext-install mysqli
 
 # Создание пользователя и группы www-data, если они не существуют
 RUN if ! getent group www-data; then addgroup -S www-data; fi \
@@ -65,5 +70,3 @@ EXPOSE 9000
 
 # Запуск Memcached и PHP-FPM под пользователем www-data с использованием sudo
 CMD ["sh", "-c", "sudo -u www-data memcached -u www-data -d && php-fpm"]
-
-
