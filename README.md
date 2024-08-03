@@ -77,7 +77,7 @@ docker compose -p bitrixdock stop
 
 ### Полное удаление
 ```shell
-docker compose -p bitrixdock down
+    docker compose -p bitrixdock down
 ```
 ## Как заполнять подключение к БД
 ![db](https://raw.githubusercontent.com/bitrixdock/bitrixdock/master/assets/db.png)
