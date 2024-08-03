@@ -41,7 +41,7 @@ BitrixDock запускает демо Битрикса предоставляя
 ## Автоматическая установка
 Для разворачивания на Linux машине
 ```shell
-curl -fsSL https://raw.githubusercontent.com/bitrixdock/bitrixdock/master/install.sh?$(date +%s) -o install.sh && chmod +x install.sh && sh install.sh
+curl -fsSL https://raw.githubusercontent.com/GoldinEA/bitrixdock/master/install.sh?$(date +%s) -o install.sh && chmod +x install.sh && sh install.sh
 ```
 
 ## Ручная установка
@@ -54,7 +54,7 @@ cp -f .env_template .env
 ```
 ⚠ Если у вас мак, удалите строчку `/etc/localtime:/etc/localtime/:ro` из docker-compose.yml
 
-По умолчанию используется nginx, php 7.4, mysql. Настройки можно изменить в файле `.env`. Также можно задать путь к каталогу с сайтом и параметры базы данных MySQL.
+По умолчанию используется nginx, php 8.3, mysql. Настройки можно изменить в файле `.env`. Также можно задать путь к каталогу с сайтом и параметры базы данных MySQL.
 
 ```dotenv
 COMPOSE_PROJECT_NAME=bitrixdock  # Имя проекта. Используется для наименования контейнеров
@@ -65,12 +65,13 @@ MYSQL_DATABASE=bitrix            # Имя базы данных
 MYSQL_USER=bitrix                # Пользователь базы данных
 MYSQL_PASSWORD=123               # Пароль для доступа к базе данных
 MYSQL_ROOT_PASSWORD=123          # Пароль для пользователя root от базы данных
-INTERFACE=0.0.0.0                # На данный интерфейс будут проксироваться порты
+INTERFACE=0.0.0.0                # На данный интерфейс будут проксироваться порты (не рекомендуется ставить 0.0.0.0)
 SITE_PATH=./www                  # Путь к директории Вашего сайта
+REDIS_SEC_KEY=sasdfasdf          # Секретный ключ для Redis сервисов
 ```
 
 Если у вас всё получилось, будем благодарны за звёздочку :)
-Ошибки ждём в [issue](https://github.com/bitrixdock/bitrixdock/issues)
+Ошибки ждём в [issue](https://github.com/GoldinEA/bitrixdock/issues)
 Приятной работы!
 
 ## Запуск и остановка bitrixdock
@@ -92,13 +93,12 @@ docker compose -p bitrixdock stop
     docker compose -p bitrixdock down
 ```
 ## Как заполнять подключение к БД
-![db](https://raw.githubusercontent.com/bitrixdock/bitrixdock/master/assets/db.png)
+![db](https://raw.githubusercontent.com/GoldinEA/bitrixdock/master/assets/db.png)
 
 ## Примечание
 - По умолчанию стоит папка `./www` (папка внутри репозиториия)
 - В настройках подключения требуется указывать имя docker compose сервиса, например для подключения к базе нужно указывать "db", а не "localhost". Пример [конфига](configs/.settings.php) с подключением к mysql и memcached.
 - Для загрузки резервной копии в контейнер используйте команду: `cat /var/www/bitrix/backup.sql | docker exec -i mysql /usr/bin/mysql -u root -p123 bitrix`
-- При использовании php74 в production удалите строку с `php7.4-xdebug` из файла `php74/Dockerfile`, сам факт его установки снижает производительность Битрикса и он должен использоваться только для разработки
 - Если контейнер php-fpm выдает ошибку "failed to create new listening socket: socket(): Address family not supported by protocol", то необходимо включить поддержку IPv6 в системе. Например в Ubuntu 22.04 — закомментировать строку в конфиге GRUB "GRUB_CMDLINE_LINUX="ipv6.disable=1"
 ## Отличие от виртуальной машины Битрикс
 Виртуальная машина от разработчиков Битрикс решает ту же задачу, что и BitrixDock - предоставляет готовое окружение. Разница лишь в том, что Docker намного удобнее, проще и легче в поддержке.
@@ -113,12 +113,8 @@ P.S.
 ## Использование xdebug.
 
 - Настройки xdebug задаются в `phpXX/php.ini`.
-- Для php73, php74 дефолтовые настройки xdebug - коннект на порт `9003` хоста, с которого пришел запрос. В случае невозможности коннекта - фаллбек на `host.docker.internal`.
+- По умолчанию порт xdebug на 9004 порту
 - При изменении `php.ini` в проекте не забудьте добавить флаг `--build` при запуске `docker-compose`, чтобы форсировать пересборку образа.
-
-
-# Ищем контрибьюторов
-Помогите развитию проекта! Требуется закрывать задачи в [issue](https://github.com/bitrixdock/bitrixdock/issues)
 
 # Пример
 Пример реального Docker проекта для Bitrix - Single Node
@@ -132,29 +128,3 @@ https://github.com/paskal/bitrix.infra
 
 Реальные проекты на основе этих проектов работают годами без проблем если их не трогать )
 ![Alt text](assets/Clip2net_200727170318.png?raw=true "BitrixDock")
-
-# Для контрибьюторов
-1. Форкаем оригинальный проект https://github.com/bitrixdock/bitrixdock кнопкой Fork
-2. Клонируем форк себе на компьютер
-```shell
-git clone https://github.com/my_account/bitrixdock
-cd bitrixdock
-```
-3. Создаем новую ветку
-```shell
-git checkout -b myfix
-```
-4. Создаем upstream на оригинальный проект
-```shell
-git remote add upstream https://github.com/bitrixdock/bitrixdock
-```
-5. Меняем файлы
-6. Делаем коммит и отправляем правки
-```shell
-git add .
-git commit -am "My fixes"
-git push -u origin new_branch
-```
-7. Переходим в свой проект `https://github.com/my_account/bitrixdock` и жмем кнопку Compare & pull request
-8. Описываем какую проблему решает Пул Реквест с кратким описанием, зачем сделано изменение
-9. Вы прекрасны! ;)
