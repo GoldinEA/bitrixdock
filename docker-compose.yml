@@ -6,17 +6,16 @@ services:
         volumes_from:
             - source
         volumes:
-            - ./php/${PHP_VERSION}/php.ini:/etc/php/${PHP_VERSION}/fpm/conf.d/90-php.ini
-            - ./php/${PHP_VERSION}/php.ini:/etc/php/${PHP_VERSION}/cli/conf.d/90-php.ini
+            - ./php/${PHP_VERSION}/php.ini:/etc/php83/conf.d/php.ini
         links:
             - db
             - memcached
         ports:
-            - '${INTERFACE}:9003:9003'
+            - '${INTERFACE}:9004:9004'
         environment:
-
             TZ: Europe/Moscow
         stdin_open: true
+        user: www-data
         tty: true
         networks:
             - bitrixdock

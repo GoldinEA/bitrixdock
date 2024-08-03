@@ -1,30 +1,69 @@
-FROM phpdockerio/php:8.3-fpm
+FROM php:8.3-fpm-alpine
 
-LABEL org.opencontainers.image.source="https://github.com/bitrixdock/bitrixdock"
+# Установка основных пакетов
+RUN apk update && apk upgrade && \
+    apk add --no-cache \
+        curl \
+        nginx \
+        php83 \
+        php83-ctype \
+        php83-curl \
+        php83-dom \
+        php83-fileinfo \
+        php83-fpm \
+        php83-gd \
+        php83-intl \
+        php83-mbstring \
+        php83-mysqli \
+        php83-opcache \
+        php83-openssl \
+        php83-phar \
+        php83-session \
+        php83-tokenizer \
+        php83-xml \
+        php83-xmlreader \
+        php83-xmlwriter \
+        sudo
 
-RUN apt-get update \
-    && apt-get -y --no-install-recommends install \
-    php8.3-dev \
-    php8.3-gd \
-    php8.3-imagick \
-    php8.3-intl \
-    php8.3-interbase \
-    php8.3-mbstring \
-    php8.3-mcrypt \
-    php8.3-memcache \
-    php8.3-memcached \
-    php8.3-mysql \
-    php8.3-opcache \
-    php8.3-soap \
-    php8.3-zip \
-    php8.3-xdebug \
-    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
+# Установка пакетов для сборки
+RUN apk add --no-cache --virtual .build-deps \
+        gcc \
+        g++ \
+        make \
+        autoconf \
+        linux-headers \
+        pkgconfig \
+        imagemagick-dev \
+        libmemcached-dev \
+        zlib-dev \
+        cyrus-sasl-dev
 
-COPY ./php.ini /etc/php/8.3/fpm/conf.d/90-php.ini
-COPY ./php.ini /etc/php/8.3/cli/conf.d/90-php.ini
+# Установка и запуск Memcached
+RUN apk add --no-cache memcached
 
-RUN usermod -u 1000 www-data
+# Установка расширений Imagick, Xdebug и Memcached
+RUN pecl install imagick xdebug memcached && \
+    docker-php-ext-enable imagick xdebug memcached
+
+# Удаление пакетов для сборки
+RUN apk del .build-deps && \
+    rm -rf /var/cache/apk/*
+
+# Копирование настроек PHP
+COPY ./php.ini /etc/php83/conf.d/php.ini
+
+# Создание пользователя и группы www-data, если они не существуют
+RUN if ! getent group www-data; then addgroup -S www-data; fi \
+    && if ! getent passwd www-data; then adduser -S -G www-data www-data; fi
+
+# Установка прав на запуск команд от имени www-data
+RUN echo 'www-data ALL=(ALL) NOPASSWD: /usr/bin/memcached' >> /etc/sudoers
 
 WORKDIR "/var/www/bitrix"
 
 EXPOSE 9000
+
+# Запуск Memcached и PHP-FPM под пользователем www-data с использованием sudo
+CMD ["sh", "-c", "sudo -u www-data memcached -u www-data -d && php-fpm"]
+
+
