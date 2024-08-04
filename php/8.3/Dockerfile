@@ -11,7 +11,6 @@ RUN apk update && apk upgrade && \
         php83-dom \
         php83-fileinfo \
         php83-fpm \
-        php83-gd \
         php83-intl \
         php83-mbstring \
         php83-mysqli \
@@ -20,7 +19,6 @@ RUN apk update && apk upgrade && \
         php83-phar \
         php83-session \
         php83-tokenizer \
-        php83-xml \
         php83-xmlreader \
         php83-xmlwriter \
         sudo \
@@ -28,7 +26,12 @@ RUN apk update && apk upgrade && \
         imagemagick-dev \
         zlib-dev \
         libmemcached-dev \
-        cyrus-sasl-dev
+        cyrus-sasl-dev \
+        freetype-dev \
+        libjpeg-turbo-dev \
+        libpng-dev \
+        libxml2-dev \
+        libzip-dev
 
 # Установка пакетов для сборки
 RUN apk add --no-cache --virtual .build-deps \
@@ -37,10 +40,7 @@ RUN apk add --no-cache --virtual .build-deps \
         make \
         autoconf \
         linux-headers \
-        pkgconfig \
-        zlib-dev \
-        libmemcached-dev \
-        cyrus-sasl-dev
+        pkgconfig
 
 # Установка и запуск Memcached
 RUN apk add --no-cache memcached
@@ -49,13 +49,19 @@ RUN apk add --no-cache memcached
 RUN pecl install imagick xdebug memcache memcached && \
     docker-php-ext-enable imagick xdebug memcache memcached
 
+# Установка и настройка GD с поддержкой FreeType и JPEG
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
+    docker-php-ext-install gd
+
+# Установка расширений mysqli, xml и zip
+RUN docker-php-ext-install mysqli xml zip
+
 # Удаление пакетов для сборки
 RUN apk del .build-deps && \
     rm -rf /var/cache/apk/*
 
 # Копирование настроек PHP
 COPY ./php.ini /etc/php83/conf.d/php.ini
-RUN docker-php-ext-install mysqli
 
 # Создание пользователя и группы www-data, если они не существуют
 RUN if ! getent group www-data; then addgroup -S www-data; fi \
@@ -63,6 +69,12 @@ RUN if ! getent group www-data; then addgroup -S www-data; fi \
 
 # Установка прав на запуск команд от имени www-data
 RUN echo 'www-data ALL=(ALL) NOPASSWD: /usr/bin/memcached' >> /etc/sudoers
+
+# Установка прав на папку /var/www/bitrix
+RUN mkdir -p /var/www/bitrix && \
+    chown -R www-data:www-data /var/www/bitrix && \
+    chmod -R 777 /var/www/bitrix
+
 
 WORKDIR "/var/www/bitrix"
 

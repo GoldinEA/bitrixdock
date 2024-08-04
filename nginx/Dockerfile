@@ -1,20 +1,26 @@
-FROM nginx:1.27.0-alpine3.19
-
+FROM nginx:alpine
 # Создание пользователя и группы www-data, если они не существуют
 RUN if ! getent group www-data; then addgroup -S www-data; fi \
     && if ! getent passwd www-data; then adduser -S -G www-data www-data; fi
+# Создание каталога и установка прав доступа
+RUN mkdir -p /var/www/bitrix && \
+    chown -R www-data:www-data /var/www/bitrix && \
+    chmod -R 777 /var/www/bitrix
 
-# Копирование конфигурации Nginx
-COPY conf/nginx.conf /etc/nginx/nginx.conf
-COPY conf/default.conf /etc/nginx/conf.d/default.conf
-COPY conf/upstream.conf /etc/nginx/conf.d/upstream.conf
+# Настройка прав для логов и конфигурационных файлов Nginx
+RUN mkdir -p /var/log/nginx && \
+    chown -R www-data:www-data /var/log/nginx && \
+    chmod -R 777 /var/log/nginx && \
+    chown -R www-data:www-data /etc/nginx
 
-# Установка правильного пользователя и прав для Nginx
-RUN mkdir -p /var/run/nginx /var/cache/nginx /var/log/nginx \
-    && chown -R www-data:www-data /var/run/nginx /var/cache/nginx /var/log/nginx
+COPY conf/nginx.conf /etc/nginx/
+COPY conf/default.conf /etc/nginx/conf.d/
+COPY conf/upstream.conf /etc/nginx/conf.d/
 
-#USER www-data
+# Дальнейшие команды для настройки вашего контейнера
 
+# Указание рабочего каталога
+WORKDIR /var/www/bitrix
+
+# Команда для запуска приложения
 CMD ["nginx"]
-
-EXPOSE 80 443
