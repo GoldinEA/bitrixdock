@@ -6,11 +6,12 @@
 - По умолчанию включен xdebug.
 - Добавлен mailhog, чтобы было удобнее отлаживать почту.
 - Nginx переведен на alpine версию образа для экономии места и ресурсов
-- Добавлен redis и bitrix-push сервер.
+
 
 ## Todo:
 - добавить codeception
 - возможно перевести с adminer на phpmyadmin
+- Добавить redis и bitrix-push сервер, чтобы работало
 
 # BitrixDock
 BitrixDock позволяет легко и просто запускать **Bitrix CMS** на **Docker**.
